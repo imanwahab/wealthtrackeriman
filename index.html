@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<title>WealthTrack by Imanwahab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif}
+.app{max-width:520px;margin:auto;min-height:100vh;padding:20px 16px 100px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.logo{font-size:24px;font-weight:800}.logo span{color:#35d07f}
+.icon{width:42px;height:42px;border:1px solid #252a32;background:#141820;border-radius:14px;color:#fff;font-size:20px}
+.card{background:linear-gradient(145deg,#151a22,#101319);border:1px solid #252b34;border-radius:22px;padding:20px;margin-bottom:14px}.label{font-size:13px;color:#9da6b2}
+.total{font-size:34px;font-weight:800;margin:7px 0}.gain{color:#35d07f;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mini{padding:16px}.mini .value{font-size:20px;font-weight:750;margin-top:7px}h2{font-size:18px;margin:22px 2px 12px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #242a32}.row:last-child{border:0}
+.name{display:flex;gap:11px;align-items:center}.dot{width:10px;height:10px;border-radius:50%;background:#35d07f}.amount{font-weight:700}
+.bar{height:9px;background:#222832;border-radius:99px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:#35d07f;border-radius:99px}
+button{font:inherit;cursor:pointer}.add{width:100%;padding:14px;border:0;border-radius:15px;background:#35d07f;color:#07110b;font-weight:800;margin-top:10px}
+.outline{width:100%;padding:13px;border:1px solid #343b46;border-radius:15px;background:#141820;color:#fff;font-weight:700;margin-top:9px}
+.danger{color:#ff6673}.settingsRow{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid #272d37}
+nav{position:fixed;bottom:0;left:0;right:0;background:#101319ee;backdrop-filter:blur(18px);border-top:1px solid #252b34;padding:10px max(16px,calc((100vw - 520px)/2));display:flex;justify-content:space-around}
+nav button{background:none;border:0;color:#8f98a5;font-size:12px;padding:7px}.active{color:#35d07f!important}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:10}.sheet{width:100%;max-width:520px;margin:auto;background:#151a22;border-radius:24px 24px 0 0;padding:22px;max-height:88vh;overflow:auto}
+.close{float:right;background:none;border:0;color:#aaa;font-size:22px}input{width:100%;padding:13px;border-radius:12px;border:1px solid #2b323d;background:#0d1015;color:white;margin:6px 0 12px}
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#202630;color:#fff;padding:11px 16px;border-radius:12px;display:none;z-index:20}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="logo">Wealth<span>Track</span><div style="font-size:10px;color:#8f98a5;font-weight:500;margin-top:2px">by Imanwahab</div></div><button class="icon" onclick="openAdd()">＋</button></header>
+
+<section class="card">
+<div class="label">TOTAL NET WORTH</div><div class="total" id="total">RM 0</div><div class="gain">↑ Portfolio tracker</div>
+</section>
+
+<div class="grid">
+<section class="card mini"><div class="label">CASH & ASB</div><div class="value" id="cash">RM 0</div></section>
+<section class="card mini"><div class="label">INVESTMENTS</div><div class="value" id="invest">RM 0</div></section>
+</div>
+
+<h2>Asset Allocation</h2><section class="card" id="assets"></section>
+
+<h2>Portfolio</h2><section class="card" id="portfolio"></section>
+</div>
+
+<nav>
+<button class="active" onclick="closeModal()">⌂<br>Home</button>
+<button onclick="openAdd()">＋<br>Asset</button>
+<button onclick="openChart()">◔<br>Chart</button>
+<button onclick="openSettings()">⚙<br>Settings</button>
+</nav>
+
+<div class="modal" id="modal"><div class="sheet"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const defaults=[
+["Cash & ASB",426000],["Business Stock",70000],["Moomoo",20000],["StashAway",1600],
+["Versa",208],["BursaGold",3000],["TNG Gold",3000],["ShoppeMoney",8100],["MPlus",5000]
+];
+let assets=JSON.parse(localStorage.getItem("wealthtrack_assets")||"null")||defaults;
+
+function money(n){return "RM "+Number(n).toLocaleString("en-MY",{maximumFractionDigits:0})}
+function save(){localStorage.setItem("wealthtrack_assets",JSON.stringify(assets))}
+function render(){
+ let total=assets.reduce((s,a)=>s+Number(a[1]),0);
+ let cash=assets.find(a=>a[0].toLowerCase().includes("cash"))?.[1]||0;
+ document.getElementById("total").textContent=money(total);
+ document.getElementById("cash").textContent=money(cash);
+ document.getElementById("invest").textContent=money(total-cash);
+ document.getElementById("assets").innerHTML=assets.map(a=>{
+   let pct=total?a[1]/total*100:0;
+   return `<div class="row"><div class="name"><span class="dot"></span>${esc(a[0])}</div><div class="amount">${money(a[1])}</div></div><div class="bar"><i style="width:${pct}%"></i></div>`;
+ }).join("");
+ document.getElementById("portfolio").innerHTML=assets.map((a,i)=>`<div class="row"><div><strong>${esc(a[0])}</strong></div><div><span class="amount">${money(a[1])}</span> <button onclick="editAsset(${i})" style="background:none;border:0;color:#35d07f">Edit</button></div></div>`).join("")+
+ `<button class="add" onclick="openAdd()">+ Add Asset</button>`;
+ save();
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function openModal(content){document.getElementById("modalContent").innerHTML=content;document.getElementById("modal").style.display="flex"}
+function closeModal(){document.getElementById("modal").style.display="none"}
+function openAdd(){openModal(`<h2>Add Asset</h2><div class="label">Asset name</div><input id="n" placeholder="Contoh: Gold 999"><div class="label">Value (RM)</div><input id="v" type="number" placeholder="10000"><button class="add" onclick="addAsset()">Save Asset</button>`)}
+function addAsset(){let n=document.getElementById("n").value.trim(),v=Number(document.getElementById("v").value);if(!n||v<=0)return toast("Masukkan nama dan nilai yang betul");assets.push([n,v]);render();closeModal();toast("Asset ditambah")}
+function editAsset(i){openModal(`<h2>Edit Asset</h2><div class="label">Asset name</div><input id="n" value="${esc(assets[i][0])}"><div class="label">Value (RM)</div><input id="v" type="number" value="${assets[i][1]}"><button class="add" onclick="updateAsset(${i})">Save Changes</button><button class="outline danger" onclick="deleteAsset(${i})">Delete Asset</button>`)}
+function updateAsset(i){let n=document.getElementById("n").value.trim(),v=Number(document.getElementById("v").value);if(!n||v<=0)return toast("Nilai tak sah");assets[i]=[n,v];render();closeModal();toast("Asset dikemaskini")}
+function deleteAsset(i){if(!confirm("Padam asset ini?"))return;assets.splice(i,1);render();closeModal();toast("Asset dipadam")}
+function openChart(){let total=assets.reduce((s,a)=>s+Number(a[1]),0);openModal(`<h2>Portfolio Chart</h2>${assets.map(a=>{let p=total?a[1]/total*100:0;return `<div class="row"><span>${esc(a[0])}</span><strong>${p.toFixed(1)}%</strong></div>`}).join("")}`)}
+function openSettings(){openModal(`<h2>Settings</h2><div class="settingsRow"><span>Currency</span><strong>MYR (RM)</strong></div><div class="settingsRow"><span>Assets</span><strong>${assets.length}</strong></div><button class="outline" onclick="resetAssets()">Reset demo data</button><button class="add" onclick="closeModal()">Done</button>`)}
+function resetAssets(){if(!confirm("Reset semua asset kepada data demo?"))return;assets=defaults.map(a=>[a[0],a[1]]);render();closeModal();toast("Data demo dipulihkan")}
+function toast(t){let x=document.getElementById("toast");x.textContent=t;x.style.display="block";setTimeout(()=>x.style.display="none",1800)}
+render();
+</script>
+</body>
+</html>
