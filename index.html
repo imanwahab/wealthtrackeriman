@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<link rel="manifest" href="manifest.json">
+<title>WealthTrack</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif}
+.app{max-width:520px;margin:auto;min-height:100vh;padding:20px 16px 96px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.logo{font-size:24px;font-weight:800}.logo span{color:#35d07f}
+.icon{width:42px;height:42px;border:1px solid #252a32;background:#141820;border-radius:14px;color:#fff;font-size:20px}
+.card{background:linear-gradient(145deg,#151a22,#101319);border:1px solid #252b34;border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:0 10px 30px #0004}
+.label{font-size:13px;color:#9da6b2}.total{font-size:34px;font-weight:800;margin:7px 0}.gain{color:#35d07f;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mini{padding:16px}.mini .value{font-size:20px;font-weight:750;margin-top:7px}
+h2{font-size:18px;margin:22px 2px 12px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #242a32}.row:last-child{border:0}
+.name{display:flex;gap:11px;align-items:center}.dot{width:10px;height:10px;border-radius:50%;background:#35d07f}.amount{font-weight:700}
+.bar{height:9px;background:#222832;border-radius:99px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;background:#35d07f;border-radius:99px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#101319ee;backdrop-filter:blur(18px);border-top:1px solid #252b34;padding:10px max(16px,calc((100vw - 520px)/2));display:flex;justify-content:space-around}
+nav button{background:none;border:0;color:#8f98a5;font-size:12px;padding:7px}.active{color:#35d07f!important}
+button{font:inherit;cursor:pointer}.add{width:100%;padding:14px;border:0;border-radius:15px;background:#35d07f;color:#07110b;font-weight:800;margin-top:10px}
+input{width:100%;padding:13px;border-radius:12px;border:1px solid #2b323d;background:#0d1015;color:white;margin:6px 0 12px}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end}.sheet{width:100%;max-width:520px;margin:auto;background:#151a22;border-radius:24px 24px 0 0;padding:22px}.close{float:right;background:none;border:0;color:#aaa;font-size:22px}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="logo">Wealth<span>Track</span></div><button class="icon" onclick="openModal()">＋</button></header>
+<section class="card">
+<div class="label">TOTAL NET WORTH</div><div class="total" id="total">RM 0</div><div class="gain">↑ Portfolio tracker</div>
+</section>
+<div class="grid">
+<section class="card mini"><div class="label">CASH & ASB</div><div class="value" id="cash">RM 426,000</div></section>
+<section class="card mini"><div class="label">INVESTMENTS</div><div class="value" id="invest">RM 35,908</div></section>
+</div>
+<h2>Asset Allocation</h2>
+<section class="card" id="assets"></section>
+<h2>Portfolio</h2>
+<section class="card">
+<div class="row"><div class="name"><span class="dot"></span>ASB / Cash</div><div class="amount">RM 426,000</div></div>
+<div class="row"><div class="name"><span class="dot"></span>Business Stock</div><div class="amount">RM 70,000</div></div>
+<div class="row"><div class="name"><span class="dot"></span>Moomoo</div><div class="amount">RM 20,000</div></div>
+<div class="row"><div class="name"><span class="dot"></span>Other Investments</div><div class="amount">RM 15,908</div></div>
+<button class="add" onclick="openModal()">+ Add Asset</button>
+</section>
+</div>
+<nav><button class="active">⌂<br>Home</button><button onclick="openModal()">＋<br>Asset</button><button>◔<br>Chart</button><button>⚙<br>Settings</button></nav>
+
+<div class="modal" id="modal"><div class="sheet">
+<button class="close" onclick="closeModal()">×</button><h2>Add Asset</h2>
+<label class="label">Asset name</label><input id="aname" placeholder="Contoh: Gold 999">
+<label class="label">Value (RM)</label><input id="avalue" type="number" placeholder="10000">
+<button class="add" onclick="addAsset()">Save Asset</button>
+</div></div>
+
+<script>
+const base=[
+["Cash & ASB",426000],["Business Stock",70000],["Moomoo",20000],["StashAway",1600],
+["Versa",208],["BursaGold",3000],["TNG Gold",3000],["ShoppeMoney",8100],["MPlus",5000]
+];
+let assets=JSON.parse(localStorage.getItem("wealth_assets")||"null")||base;
+function money(n){return "RM "+n.toLocaleString("en-MY",{maximumFractionDigits:0})}
+function render(){
+ const total=assets.reduce((a,b)=>a+b[1],0); document.getElementById("total").textContent=money(total);
+ document.getElementById("cash").textContent=money(assets[0][1]);
+ document.getElementById("invest").textContent=money(total-assets[0][1]);
+ const box=document.getElementById("assets"); box.innerHTML="";
+ assets.forEach(([n,v])=>{let p=total?v/total*100:0;box.innerHTML+=`<div class="row"><div class="name"><span class="dot"></span>${n}</div><div class="amount">${money(v)}</div></div><div class="bar"><i style="width:${p}%"></i></div>`});
+ localStorage.setItem("wealth_assets",JSON.stringify(assets));
+}
+function openModal(){document.getElementById("modal").style.display="flex"} function closeModal(){document.getElementById("modal").style.display="none"}
+function addAsset(){let n=document.getElementById("aname").value.trim(),v=Number(document.getElementById("avalue").value);if(!n||!v)return;assets.push([n,v]);document.getElementById("aname").value="";document.getElementById("avalue").value="";closeModal();render()}
+render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body></html>
